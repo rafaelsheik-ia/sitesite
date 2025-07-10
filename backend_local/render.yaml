@@ -1,15 +1,30 @@
+# Arquivo: render.yaml
+# Versão final para deploy com PostgreSQL
+
 services:
+  # Configuração do Serviço Web (sua aplicação Flask)
   - type: web
-    name: meu-painel-backend  # Escolha um nome para seu serviço
+    name: painel-backend   # Nome do seu serviço web
     env: python
     plan: free
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn --worker-class gevent --bind 0.0.0.0:$PORT main:app"
-    healthCheckPath: /api/health # Vamos criar essa rota a seguir
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT main:app"
+    healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.6 # Use a versão do Python que você usa, ou uma recente
-    disk:
-      name: sqlite-db
-      mountPath: /app/src/database
-      sizeGB: 1
+        value: 3.11.5  # Usando uma versão estável e recente do Python
+
+      # A mágica acontece aqui:
+      # Esta variável de ambiente 'DATABASE_URL' será criada
+      # e seu valor será preenchido automaticamente com a URL
+      # interna do banco de dados chamado 'baccc'.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: baccc  # O nome do seu banco de dados PostgreSQL no Render
+          property: internalDatabaseUrl
+
+  # Configuração do Banco de Dados (apenas para referência, você já criou no painel)
+  - type: pserv
+    name: baccc  # O nome do seu banco de dados PostgreSQL
+    env: postgres
+    plan: free

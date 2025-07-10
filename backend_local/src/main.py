@@ -35,16 +35,30 @@ def health_check():
     return {"status": "ok"}, 200
 # ====================================================================
 
-# Configuração do banco de dados
-# O caminho do banco de dados será ajustado para funcionar com o disco do Render
-database_dir = os.path.join(os.path.dirname(__file__), 'database')
-os.makedirs(database_dir, exist_ok=True) # Garante que o diretório exista
-database_path = os.path.join(database_dir, 'app.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{database_path}"
+
+# ====================================================================
+# CONFIGURAÇÃO DO BANCO DE DADOS (PostgreSQL para Produção, SQLite para Local)
+# ====================================================================
+# Pega a URL do banco de dados da variável de ambiente 'DATABASE_URL' que o Render nos dará.
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # Se a variável de ambiente existir (estamos no Render), usa PostgreSQL.
+    # A linha abaixo corrige um pequeno problema de compatibilidade entre bibliotecas.
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+else:
+    # Se a variável não existir (estamos no nosso PC), usa um banco SQLite local.
+    database_dir = os.path.join(os.path.dirname(__file__), 'database')
+    os.makedirs(database_dir, exist_ok=True) # Garante que o diretório exista
+    database_path = os.path.join(database_dir, 'app.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{database_path}"
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+# ====================================================================
 
-# Criar tabelas
+
+# Criar tabelas e configurações padrão dentro do contexto da aplicação
 with app.app_context():
     db.create_all()
     
