@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: meu-painel-backend  # Escolha um nome para seu serviço
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn --worker-class gevent --bind 0.0.0.0:$PORT main:app"
+    healthCheckPath: /api/health # Vamos criar essa rota a seguir
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.6 # Use a versão do Python que você usa, ou uma recente
+    disk:
+      name: sqlite-db
+      mountPath: /app/src/database
+      sizeGB: 1
